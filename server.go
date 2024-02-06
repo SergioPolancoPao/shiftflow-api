@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/jmoiron/sqlx"
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
+	"gorm.io/gorm"
 )
 
 func router(server *echo.Echo) error {
@@ -18,7 +18,7 @@ func router(server *echo.Echo) error {
 	return nil
 }
 
-func initDB() *sqlx.DB {
+func initDB() *gorm.DB {
 	db, err := NewDB(
 		os.Getenv("DB_HOST"),
 		os.Getenv("DB_PORT"),
@@ -32,6 +32,13 @@ func initDB() *sqlx.DB {
 		panic(err)
 	}
 
+	db.SetupJoinTable(&Team{}, "Teammates", &TeamTeammate{})
+	mErr := db.AutoMigrate(&Team{}, &Teammate{}, &ActivityType{}, &Activity{})
+
+	if mErr != nil {
+		panic(err)
+	}
+
 	return db
 }
 
@@ -42,13 +49,16 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 
-	initDB()
+	db := initDB()
 
 	log.Print("Database server is running")
 
 	e := echo.New()
 
 	router(e)
+
+	ts := NewTeamService(db)
+	NewTeamController(e, ts)
 
 	e.Logger.Fatal(e.Start(os.Getenv("SERVER_PORT")))
 }
