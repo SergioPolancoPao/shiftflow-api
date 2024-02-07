@@ -16,7 +16,25 @@ type TeamController struct {
 }
 
 func (tc *TeamController) CreateTeam(c echo.Context) error {
-	return c.String(http.StatusOK, tc.ts.CreateTeam())
+	var body CreateTeamRequestBody
+
+	if err := c.Bind(&body); err != nil {
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+
+	if err := c.Validate(body); err != nil {
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+
+	team := Team{
+		Name: body.Name,
+	}
+
+	if res := tc.ts.CreateTeam(&team); res.Error != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError)
+	}
+
+	return c.JSON(http.StatusOK, team)
 }
 
 func (tc *TeamController) addRoutes() {

@@ -10,8 +10,8 @@ type TeamService struct {
 	dbClient *gorm.DB
 }
 
-func (ts *TeamService) CreateTeam() string {
-	return "Success save"
+func (ts *TeamService) CreateTeam(team *Team) (tx *gorm.DB) {
+	return ts.dbClient.Create(&team)
 }
 
 func NewTeamService(db *gorm.DB) *TeamService {

@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
@@ -42,6 +43,14 @@ func initDB() *gorm.DB {
 	return db
 }
 
+type CustomValidator struct {
+	validator *validator.Validate
+}
+
+func (cv *CustomValidator) Validate(i interface{}) error {
+	return cv.validator.Struct(i)
+}
+
 func main() {
 	err := godotenv.Load()
 
@@ -54,6 +63,10 @@ func main() {
 	log.Print("Database server is running")
 
 	e := echo.New()
+
+	validator := validator.New()
+
+	e.Validator = &CustomValidator{validator}
 
 	router(e)
 

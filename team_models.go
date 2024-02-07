@@ -8,7 +8,7 @@ import (
 
 type Team struct {
 	gorm.Model
-	Name      string
+	Name      string     `json:"name" validate:"required"`
 	Teammates []Teammate `gorm:"many2many:team_teammate;"`
 }
 
