@@ -43,14 +43,6 @@ func initDB() *gorm.DB {
 	return db
 }
 
-type CustomValidator struct {
-	validator *validator.Validate
-}
-
-func (cv *CustomValidator) Validate(i interface{}) error {
-	return cv.validator.Struct(i)
-}
-
 func main() {
 	err := godotenv.Load()
 
