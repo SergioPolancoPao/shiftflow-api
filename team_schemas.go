@@ -5,5 +5,6 @@ type CreateTeamRequestBody struct {
 }
 
 type ListTeamQueryParams struct {
+	ID   uint   `json:"id"`
 	Name string `json:"name"`
 }

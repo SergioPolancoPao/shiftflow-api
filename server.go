@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/joho/godotenv"
+	"github.com/labstack/echo-contrib/echoprometheus"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"gorm.io/gorm"
@@ -17,6 +18,8 @@ func router(server *echo.Echo) error {
 	server.GET("/ping", func(c echo.Context) error {
 		return c.String(http.StatusOK, "pong")
 	})
+
+	server.GET("/metrics", echoprometheus.NewHandler())
 
 	return nil
 }
@@ -35,7 +38,12 @@ func initDB() (*gorm.DB, error) {
 		return nil, fmt.Errorf("error initializing db: %w", err)
 	}
 
-	db.SetupJoinTable(&Team{}, "Teammates", &TeamTeammate{})
+	setupTableErr := db.SetupJoinTable(&Team{}, "Teammates", &TeamTeammate{})
+
+	if setupTableErr != nil {
+		return nil, setupTableErr
+	}
+
 	mErr := db.AutoMigrate(&Team{}, &Teammate{}, &ActivityType{}, &Activity{})
 
 	if mErr != nil {
@@ -60,13 +68,16 @@ func main() {
 
 	e := echo.New()
 
+	e.Use(echoprometheus.NewMiddleware("myapp"))
 	e.Use(middleware.Logger())
 
 	validator := validator.New()
 
 	e.Validator = &CustomValidator{validator}
 
-	router(e)
+	if rErr := router(e); rErr != nil {
+		panic(err)
+	}
 
 	ts := NewTeamService(db)
 	NewTeamController(e, ts)

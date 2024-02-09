@@ -38,9 +38,9 @@ func (tc *TeamController) CreateTeam(c echo.Context) error {
 func (tc *TeamController) GetTeams(c echo.Context) error {
 	var qp ListTeamQueryParams
 
-	echo.QueryParamsBinder(c).String("name", &qp.Name)
-
-	if err := echo.QueryParamsBinder(c).String("name", &qp.Name).BindError(); err != nil {
+	if err := echo.QueryParamsBinder(c).
+		String("name", &qp.Name).
+		Uint("id", &qp.ID).BindError(); err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
 
@@ -48,7 +48,7 @@ func (tc *TeamController) GetTeams(c echo.Context) error {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
 
-	teams, err := tc.ts.GetTeams(qp.Name)
+	teams, err := tc.ts.GetTeams(qp)
 
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError)

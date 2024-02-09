@@ -14,15 +14,11 @@ func (ts *TeamService) CreateTeam(team *Team) (tx *gorm.DB) {
 	return ts.dbClient.Create(&team)
 }
 
-func (ts *TeamService) GetTeams(name string) ([]Team, error) {
+func (ts *TeamService) GetTeams(filter ListTeamQueryParams) ([]Team, error) {
 	var teams []Team
 	query := ts.dbClient.Model(&Team{})
 
-	if name != "" {
-		query = query.Where("name = ?", name)
-	}
-	
-	if err := query.Find(&teams).Error; err != nil {
+	if err := query.Scopes(CommonFields(filter)).Find(&teams).Error; err != nil {
 		return nil, fmt.Errorf("error retrieving team list: %w", err)
 	}
 
