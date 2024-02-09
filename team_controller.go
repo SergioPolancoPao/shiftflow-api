@@ -8,10 +8,6 @@ import (
 	"gorm.io/gorm"
 )
 
-type ITeamController interface {
-	CreateTeam(c echo.Context) error
-}
-
 type TeamController struct {
 	eServer *echo.Echo
 	ts      *TeamService
@@ -66,8 +62,12 @@ func (tc *TeamController) GetTeam(c echo.Context) error {
 
 	team, err := tc.ts.GetTeam(id)
 
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return echo.NewHTTPError(http.StatusNotFound)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return echo.NewHTTPError(http.StatusNotFound)
+		}
+
+		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
 
 	return c.JSON(http.StatusOK, team)
@@ -82,7 +82,7 @@ func (tc *TeamController) DeleteTeam(c echo.Context) error {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return echo.NewHTTPError(http.StatusNotFound)
 		}
-		
+
 		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
 

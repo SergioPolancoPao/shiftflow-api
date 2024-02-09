@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -8,6 +9,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 	"gorm.io/gorm"
 )
 
@@ -19,7 +21,7 @@ func router(server *echo.Echo) error {
 	return nil
 }
 
-func initDB() *gorm.DB {
+func initDB() (*gorm.DB, error) {
 	db, err := NewDB(
 		os.Getenv("DB_HOST"),
 		os.Getenv("DB_PORT"),
@@ -30,31 +32,35 @@ func initDB() *gorm.DB {
 	)
 
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("error initializing db: %w", err)
 	}
 
 	db.SetupJoinTable(&Team{}, "Teammates", &TeamTeammate{})
 	mErr := db.AutoMigrate(&Team{}, &Teammate{}, &ActivityType{}, &Activity{})
 
 	if mErr != nil {
-		panic(err)
+		return nil, fmt.Errorf("error migrating db: %w", mErr)
 	}
 
-	return db
+	return db, nil
 }
 
 func main() {
-	err := godotenv.Load()
-
-	if err != nil {
+	if err := godotenv.Load(); err != nil {
 		log.Fatal("Error loading .env file")
 	}
 
-	db := initDB()
+	db, err := initDB()
+
+	if err != nil {
+		panic(err)
+	}
 
 	log.Print("Database server is running")
 
 	e := echo.New()
+
+	e.Use(middleware.Logger())
 
 	validator := validator.New()
 

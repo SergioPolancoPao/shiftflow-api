@@ -10,8 +10,8 @@ type Activity struct {
 	TeamID uint
 	Team   Team
 
-	current_leader int
-	next_leader    int
+	CurrentLeader int
+	NextLeader    int
 	ActivityID     uint
 	Periodicity    string
 }

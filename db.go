@@ -15,7 +15,7 @@ func NewDB(host, port, username, password, dbname, sslmode string) (*gorm.DB, er
 	db, err := gorm.Open(postgres.Open(connStr), &gorm.Config{})
 
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error connecting to db: %w", err)
 	}
 
 	return db, nil

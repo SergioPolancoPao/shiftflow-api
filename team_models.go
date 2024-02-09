@@ -21,6 +21,6 @@ type Teammate struct {
 type TeamTeammate struct {
 	TeamID     uint `gorm:"primaryKey"`
 	TeammateID uint `gorm:"primaryKey"`
-	position   int  `gorm:"primaryKey"`
+	Position   int  `gorm:"primaryKey"`
 	CreatedAt  time.Time
 }
