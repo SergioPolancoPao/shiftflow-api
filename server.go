@@ -68,7 +68,7 @@ func main() {
 
 	e := echo.New()
 
-	e.Use(echoprometheus.NewMiddleware("myapp"))
+	e.Use(echoprometheus.NewMiddleware("shiftflow"))
 	e.Use(middleware.Logger())
 
 	validator := validator.New()

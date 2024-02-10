@@ -6,17 +6,16 @@ import (
 
 type Activity struct {
 	gorm.Model
-	Name   string
-	TeamID uint
-	Team   Team
-
+	Name          string `gorm:"not null;index"`
+	TeamID        uint   `gorm:"not null;index"`
+	Team          Team
 	CurrentLeader int
 	NextLeader    int
-	ActivityID     uint
-	Periodicity    string
+	ActivityID    uint `gorm:"not null;index"`
+	Periodicity   string
 }
 
 type ActivityType struct {
 	gorm.Model
-	Name string
+	Name string `gorm:"not null;index;unique"`
 }
