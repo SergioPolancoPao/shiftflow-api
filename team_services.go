@@ -7,18 +7,17 @@ import (
 )
 
 type TeamService struct {
-	dbClient *gorm.DB
+	tRepository *TeamRepository
 }
 
 func (ts *TeamService) CreateTeam(team *Team) (tx *gorm.DB) {
-	return ts.dbClient.Create(&team)
+	return ts.tRepository.CreateTeam(team)
 }
 
-func (ts *TeamService) GetTeams(filter ListTeamQueryParams) ([]Team, error) {
+func (ts *TeamService) GetTeams(filter GetTeamsQueryParams) ([]Team, error) {
 	var teams []Team
-	query := ts.dbClient.Model(&Team{})
 
-	if err := query.Scopes(CommonFields(filter)).Find(&teams).Error; err != nil {
+	if err := ts.tRepository.GetTeams(filter, &teams).Error; err != nil {
 		return nil, fmt.Errorf("error retrieving team list: %w", err)
 	}
 
@@ -28,7 +27,7 @@ func (ts *TeamService) GetTeams(filter ListTeamQueryParams) ([]Team, error) {
 func (ts *TeamService) GetTeam(id string) (*Team, error) {
 	var team Team
 
-	if err := ts.dbClient.Where("id = ?", id).First(&team).Error; err != nil {
+	if err := ts.tRepository.GetTeam(id, &team).Error; err != nil {
 		return nil, fmt.Errorf("error checking if team exists: %w", err)
 	}
 
@@ -42,15 +41,15 @@ func (ts *TeamService) DeleteTeam(id string) (*Team, error) {
 		return nil, fmt.Errorf("error checking if team exists: %w", err)
 	}
 
-	if err := ts.dbClient.Delete(&team).Error; err != nil {
+	if err := ts.tRepository.DeleteTeam(team).Error; err != nil {
 		return nil, fmt.Errorf("error deleting team: %w", err)
 	}
 
 	return team, nil
 }
 
-func NewTeamService(db *gorm.DB) *TeamService {
+func NewTeamService(tr *TeamRepository) *TeamService {
 	return &TeamService{
-		dbClient: db,
+		tRepository: tr,
 	}
 }

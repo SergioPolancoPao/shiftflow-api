@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/joho/godotenv"
@@ -12,6 +13,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 func router(server *echo.Echo) error {
@@ -24,7 +26,7 @@ func router(server *echo.Echo) error {
 	return nil
 }
 
-func initDB() (*gorm.DB, error) {
+func InitDB(logger logger.Interface) (*gorm.DB, error) {
 	db, err := NewDB(
 		os.Getenv("DB_HOST"),
 		os.Getenv("DB_PORT"),
@@ -32,6 +34,7 @@ func initDB() (*gorm.DB, error) {
 		os.Getenv("DB_PASSWORD"),
 		os.Getenv("DB_NAME"),
 		os.Getenv("DB_SSLMODE"),
+		logger,
 	)
 
 	if err != nil {
@@ -53,12 +56,41 @@ func initDB() (*gorm.DB, error) {
 	return db, nil
 }
 
+func getLogLevel(logLevelStr string) logger.LogLevel {
+	var logLevel logger.LogLevel
+	switch logLevelStr {
+	case "silent":
+		logLevel = logger.Silent
+	case "error":
+		logLevel = logger.Error
+	case "warn":
+		logLevel = logger.Warn
+	case "info":
+		logLevel = logger.Info
+	default:
+		logLevel = logger.Info
+	}
+
+	return logLevel
+}
+
 func main() {
 	if err := godotenv.Load(); err != nil {
 		log.Fatal("Error loading .env file")
 	}
 
-	db, err := initDB()
+	logLevelStr := strings.ToLower(os.Getenv("LOG_LEVEL"))
+
+	logLevel := getLogLevel(logLevelStr)
+
+	newLogger := logger.New(
+		log.New(os.Stdout, "\r\n", log.LstdFlags),
+		logger.Config{
+			LogLevel: logLevel,
+		},
+	)
+
+	db, err := InitDB(newLogger)
 
 	if err != nil {
 		panic(err)
@@ -79,7 +111,8 @@ func main() {
 		panic(err)
 	}
 
-	ts := NewTeamService(db)
+	tr := NewTeamRepository(db)
+	ts := NewTeamService(tr)
 	NewTeamController(e, ts)
 
 	e.Logger.Fatal(e.Start(os.Getenv("SERVER_PORT")))

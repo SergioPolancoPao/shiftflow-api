@@ -36,7 +36,7 @@ func (tc *TeamController) CreateTeam(c echo.Context) error {
 }
 
 func (tc *TeamController) GetTeams(c echo.Context) error {
-	var qp ListTeamQueryParams
+	var qp GetTeamsQueryParams
 
 	if err := echo.QueryParamsBinder(c).
 		String("name", &qp.Name).
