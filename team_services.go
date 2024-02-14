@@ -7,7 +7,7 @@ import (
 )
 
 type TeamService struct {
-	tRepository *TeamRepository
+	tRepository ITeamRepository
 }
 
 func (ts *TeamService) CreateTeam(team *Team) (tx *gorm.DB) {
@@ -48,7 +48,7 @@ func (ts *TeamService) DeleteTeam(id string) (*Team, error) {
 	return team, nil
 }
 
-func NewTeamService(tr *TeamRepository) *TeamService {
+func NewTeamService(tr ITeamRepository) *TeamService {
 	return &TeamService{
 		tRepository: tr,
 	}
