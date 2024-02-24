@@ -8,12 +8,12 @@ import (
 	"gorm.io/gorm"
 )
 
-type TeamController struct {
-	ts *TeamService
+type TeammateController struct {
+	tms *TeammateService
 }
 
-func (tc *TeamController) CreateTeam(c echo.Context) error {
-	var body CreateTeamRequestBody
+func (tmc *TeammateController) CreateTeammate(c echo.Context) error {
+	var body CreateTeammateRequestBody
 
 	if err := c.Bind(&body); err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
@@ -23,22 +23,24 @@ func (tc *TeamController) CreateTeam(c echo.Context) error {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
 
-	team := Team{
-		Name: body.Name,
+	teammate := Teammate{
+		Name:  body.Name,
+		Email: body.Email,
 	}
 
-	if res := tc.ts.CreateTeam(&team); res.Error != nil {
+	if res := tmc.tms.CreateTeammate(&teammate); res.Error != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
 
-	return c.JSON(http.StatusOK, team)
+	return c.JSON(http.StatusOK, teammate)
 }
 
-func (tc *TeamController) GetTeams(c echo.Context) error {
-	var qp GetTeamsQueryParams
+func (tmc *TeammateController) GetTeammates(c echo.Context) error {
+	var qp GetTeammatesQueryParams
 
 	if err := echo.QueryParamsBinder(c).
 		String("name", &qp.Name).
+		String("email", &qp.Email).
 		Uint("id", &qp.ID).BindError(); err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
@@ -46,20 +48,20 @@ func (tc *TeamController) GetTeams(c echo.Context) error {
 	if err := c.Validate(qp); err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
-	var teams []Team
-	err := tc.ts.GetTeams(qp, &teams)
+	var teammates []Teammate
+	err := tmc.tms.GetTeammates(qp, &teammates)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
 
-	return c.JSON(http.StatusOK, teams)
+	return c.JSON(http.StatusOK, teammates)
 }
 
-func (tc *TeamController) GetTeam(c echo.Context) error {
+func (tmc *TeammateController) GetTeammate(c echo.Context) error {
 	id := c.Param("id")
 
-	var team Team
-	err := tc.ts.GetTeam(id, &team)
+	var teammate Teammate
+	err := tmc.tms.GetTeammate(id, &teammate)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return echo.NewHTTPError(http.StatusNotFound)
@@ -68,14 +70,14 @@ func (tc *TeamController) GetTeam(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
 
-	return c.JSON(http.StatusOK, team)
+	return c.JSON(http.StatusOK, teammate)
 }
 
-func (tc *TeamController) DeleteTeam(c echo.Context) error {
+func (tmc *TeammateController) DeleteTeammate(c echo.Context) error {
 	id := c.Param("id")
-	var team Team
+	var teammate Teammate
 
-	err := tc.ts.DeleteTeam(id, &team)
+	err := tmc.tms.DeleteTeam(id, &teammate)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return echo.NewHTTPError(http.StatusNotFound)
@@ -84,11 +86,11 @@ func (tc *TeamController) DeleteTeam(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
 
-	return c.JSON(http.StatusOK, team)
+	return c.JSON(http.StatusOK, teammate)
 }
 
-func NewTeamController(ts *TeamService) *TeamController {
-	return &TeamController{
-		ts: ts,
+func NewTeammateController(tms *TeammateService) *TeammateController {
+	return &TeammateController{
+		tms: tms,
 	}
 }

@@ -99,8 +99,8 @@ func TestTeamRepository(t *testing.T) {
 
 		tErr := tr.GetTeam(strconv.FormatUint(uint64(teams[0].ID), 10), &team).Error
 
-		assert.Equal(t, team.Name, teams[0].Name)
 		assert.Nil(t, tErr)
+		assert.Equal(t, team.Name, teams[0].Name)
 	})
 
 	t.Run("should throw not found error looking for a single team by id", func(t *testing.T) {
@@ -139,7 +139,7 @@ func TestTeamRepository(t *testing.T) {
 
 func setupTeamRepositoryTest() {
 	if err := godotenv.Load(); err != nil {
-		log.Fatal("Error loading .env file")
+		log.Fatalf("Error loading .env file %s", err)
 	}
 
 	newLogger := logger.New(
@@ -152,15 +152,13 @@ func setupTeamRepositoryTest() {
 	var err error
 
 	dbTeamRepository, err = InitDB(newLogger)
-
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Error initializing db %s", err)
 	}
 }
 
 func teardownGlobalTeamRepositoryTest() {
 	connection, err := dbTeamRepository.DB()
-
 	if err != nil {
 		log.Fatalln(err)
 	}

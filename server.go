@@ -16,12 +16,25 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-func router(server *echo.Echo) error {
+func router(server *echo.Echo, tc *TeamController, tmc *TeammateController) error {
 	server.GET("/ping", func(c echo.Context) error {
 		return c.String(http.StatusOK, "pong")
 	})
-
 	server.GET("/metrics", echoprometheus.NewHandler())
+
+	// Team group
+	tg := server.Group("/teams")
+	tg.POST("", tc.CreateTeam)
+	tg.GET("", tc.GetTeams)
+	tg.GET("/:id", tc.GetTeam)
+	tg.DELETE("/:id", tc.DeleteTeam)
+
+	// Teammate group
+	tmg := server.Group("/teammates")
+	tmg.POST("", tmc.CreateTeammate)
+	tmg.GET("", tmc.GetTeammates)
+	tmg.GET("/:id", tmc.GetTeammate)
+	tmg.DELETE("/:id", tmc.DeleteTeammate)
 
 	return nil
 }
@@ -36,21 +49,16 @@ func InitDB(logger logger.Interface) (*gorm.DB, error) {
 		os.Getenv("DB_SSLMODE"),
 		logger,
 	)
-
 	if err != nil {
 		return nil, fmt.Errorf("error initializing db: %w", err)
 	}
 
-	setupTableErr := db.SetupJoinTable(&Team{}, "Teammates", &TeamTeammate{})
-
-	if setupTableErr != nil {
-		return nil, setupTableErr
+	if err := db.SetupJoinTable(&Team{}, "Teammates", &TeamTeammate{}); err != nil {
+		return nil, fmt.Errorf("error setting up team_teammate table: %w", err)
 	}
 
-	mErr := db.AutoMigrate(&Team{}, &Teammate{}, &ActivityType{}, &Activity{})
-
-	if mErr != nil {
-		return nil, fmt.Errorf("error migrating db: %w", mErr)
+	if err := db.AutoMigrate(&Team{}, &Teammate{}, &ActivityType{}, &Activity{}); err != nil {
+		return nil, fmt.Errorf("error migrating db: %w", err)
 	}
 
 	return db, nil
@@ -76,7 +84,7 @@ func getLogLevel(logLevelStr string) logger.LogLevel {
 
 func main() {
 	if err := godotenv.Load(); err != nil {
-		log.Fatal("Error loading .env file")
+		log.Fatalf("Error loading .env file: %s", err)
 	}
 
 	logLevelStr := strings.ToLower(os.Getenv("LOG_LEVEL"))
@@ -91,9 +99,8 @@ func main() {
 	)
 
 	db, err := InitDB(newLogger)
-
 	if err != nil {
-		panic(err)
+		log.Fatalf("Error initializing db %s", err)
 	}
 
 	log.Print("Database server is running")
@@ -107,13 +114,19 @@ func main() {
 
 	e.Validator = &CustomValidator{validator}
 
-	if rErr := router(e); rErr != nil {
-		panic(err)
-	}
-
+	// team
 	tr := NewTeamRepository(db)
 	ts := NewTeamService(tr)
-	NewTeamController(e, ts)
+	tc := NewTeamController(ts)
+
+	//teammate
+	tmr := NewTeammateRepository(db)
+	tms := NewTeammateService(tmr)
+	tmc := NewTeammateController(tms)
+
+	if err := router(e, tc, tmc); err != nil {
+		log.Fatalf("Error initializing router %s", err)
+	}
 
 	e.Logger.Fatal(e.Start(os.Getenv("SERVER_PORT")))
 }
